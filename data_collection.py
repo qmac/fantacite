@@ -1,3 +1,4 @@
+from collections import defaultdict
 import http.client
 import urllib
 import json
@@ -30,7 +31,7 @@ def get_author_list(dates):
         "attributes": "AA.AuId,ECC",
         "orderby": "ECC:desc",
         "count": 1000,
-        "mode": "json",
+        "mode": "json"
     })
 
     response = evaluate_request(author_params)
@@ -39,7 +40,28 @@ def get_author_list(dates):
         for author in paper["AA"]:
             authors.add(author['AuId'])
 
-    return authors
+    return list(authors)
+
+
+def get_roster_stats(authors, date):
+    stats = defaultdict(lambda: [0.0, 0.0])
+    author_string = ",".join(["Composite(AA.AuId=%d)" % a for a in authors])
+    roster_params = urllib.urlencode({
+        "expr": "And(D>%s,Or(%s))" % (date, author_string),
+        "attributes": "ECC,AA.AuId",
+        "count": 1000,
+        "mode": "json"
+    })
+
+    response = evaluate_request(roster_params)
+    for paper in response["entities"]:
+        for author in paper["AA"]:
+            au_id = author["AuId"]
+            if au_id in authors:
+                stats[au_id][0] += 1
+                stats[au_id][1] += paper["ECC"]
+
+    return stats
 
 
 if __name__ == '__main__':
@@ -47,4 +69,5 @@ if __name__ == '__main__':
         print 'Usage: python data_collection.py'
         exit(-1)
 
-    print(len(get_author_list("['2016-08-01', '2017-08-01']")))
+    authors = get_author_list("['2016-08-01', '2017-08-01']")[10:30]
+    print(get_roster_stats(authors, "'2017-08-01'"))
