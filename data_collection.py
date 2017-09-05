@@ -1,5 +1,5 @@
 from collections import defaultdict
-import http.client
+import httplib
 import urllib
 import json
 import os
@@ -14,7 +14,7 @@ headers = {
 
 def evaluate_request(params):
     try:
-        conn = http.client.HTTPSConnection("westus.api.cognitive.microsoft.com")
+        conn = httplib.HTTPSConnection("westus.api.cognitive.microsoft.com")
         conn.request("GET", "/academic/v1.0/evaluate?%s" % params, "{body}", headers)
         response = conn.getresponse()
         data = json.loads(response.read())
